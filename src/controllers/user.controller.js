@@ -1,13 +1,10 @@
-const { object } = require("webidl-conversions");
 const User = require("../models/User");
-const { ifError } = require("assert");
-const { error } = require("console");
 
 class UserController {
   static async index(req, res) {
     try {
       const users = await User.find({});
-      if (!users.length === 0) {
+      if (users.length === 0) {
         throw new Error("Users not found");
       } else {
         res.json({ status: true, data: users });
@@ -60,7 +57,7 @@ class UserController {
       if (!user) {
         throw new Error("User not found");
       } else {
-        Object.assign(user, body);
+        user.set(body);
         user.save();
       }
     } catch (error) {
@@ -88,3 +85,4 @@ class UserController {
     }
   }
 }
+module.exports = UserController;
