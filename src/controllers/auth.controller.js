@@ -1,6 +1,7 @@
 const User = require("../models/Message");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const configs = require("../configs");
 
 class AuthController {
   static async register(req, res) {
@@ -38,7 +39,7 @@ class AuthController {
         } else {
           const token = jwt.sign(
             { _id: user._id, email: user.email },
-            process.env.SECRET_TOKEN,
+            configs.jwt_key,
             { expiresIn: "24h" }
           );
           user.token = token;
