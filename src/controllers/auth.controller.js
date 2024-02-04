@@ -1,67 +1,42 @@
-const User = require("../models/Message");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const configs = require("../configs");
+const { StatusCodes } = require("http-status-codes");
+const AuthService = require("../services/auth.service");
 
 class AuthController {
   static async register(req, res) {
-    const body = req.body;
     try {
-      const user = await User.find({ email: body.email });
-      if (user) {
-        throw new Error("User with email already");
-      } else {
-        const hashedPassword = await bcrypt.hash(body.password, 10);
-        const newUser = new User(data);
-        newUser.password = hashedPassword;
-        await newUser.save();
-        res.json({ status: true, data: newUser });
-      }
+      const reqBody = req.body;
+      const user = await AuthService.register(reqBody);
+      res.status(StatusCodes.CREATED).json({ status: true, data: user });
     } catch (error) {
-      res.status(404).json({
+      res.status(StatusCodes.BAD_REQUEST).json({
         status: false,
-        message: error,
+        message: error.message,
       });
     }
   }
 
   static async login(req, res) {
-    const data = req.body;
-
     try {
-      const user = await User.findOne({ email: data.email });
-      if (!user) {
-        throw new Error(`There is no user with ${data.email}`);
-      } else {
-        const isAMatch = bcrypt.compare(user.password, data.password);
-        if (!isAMatch) {
-          throw new Error("Wrong password");
-        } else {
-          const token = jwt.sign(
-            { _id: user._id, email: user.email },
-            configs.jwt_key,
-            { expiresIn: "24h" }
-          );
-          user.token = token;
-          user.save();
-          res.json({ status: true, data: user, token: token });
-        }
-      }
+      const reqBody = req.body;
+      const token = await AuthService.login(reqBody);
+      res.status(StatusCodes.OK).json({ status: true, token });
     } catch (error) {
-      res.status(404).json({
+      res.status(StatusCodes.BAD_REQUEST).json({
         status: false,
-        message: error,
+        message: error.message,
       });
     }
   }
   static async logout(req, res) {
-    const id = req.params.id;
-    const user = await User.findOne({ _id: id });
-    if (!user) {
-      throw new Error("Invalid authentication token.");
-    } else {
-      user.token = null;
-      user.save();
+    try {
+      const id = req.params.id;
+      await AuthService.delete(id);
+      res.json({ status: true, message: "User logged out" });
+    } catch (error) {
+      res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ status: false, message: error.message });
     }
   }
 }
+module.exports = AuthController;
