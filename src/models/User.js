@@ -12,6 +12,13 @@ const userSchema = mongoose.Schema({
   token: {
     type: String,
   },
+  emailVerificationToken: {
+    type: String,
+  },
+  emailIsVerified: {
+    type: Boolean,
+    default: false,
+  },
   role: {
     type: String,
     enum: ["admin", "user"],

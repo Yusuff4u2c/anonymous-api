@@ -7,8 +7,11 @@ const express = require("express");
 const isAuthenticated = require("../middlewares/isAuthenticated");
 const isAdmin = require("../middlewares/isAdmin");
 const router = express.Router();
+const emailVerificationRoute = require("./email.verification.route");
 
 router.use("/auth", authRoute);
+router.use("/verify/:token", emailVerificationRoute);
+
 router.use("/admin/messages", isAuthenticated, isAdmin, adminMessageRouter);
 router.use("/admin/users", isAuthenticated, isAdmin, adminUserRouter);
 router.use("/messages", userMessageRouter);
