@@ -5,15 +5,14 @@ const jwt = require("jsonwebtoken");
 const configs = require("../configs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+
 class AuthService {
   static async register(reqBody) {
     const user = await User.findOne({ email: reqBody.email });
-
     if (user) {
       throw new Error("User with email already exists");
     }
     const emailVerificationToken = crypto.randomBytes(20).toString("hex");
-    console.log(emailVerificationToken);
 
     const hashedPassword = await bcrypt.hash(reqBody.password, 10);
 
@@ -34,7 +33,7 @@ class AuthService {
       throw new Error("There is no user with such credentials ");
     }
 
-    if (!user.verified) {
+    if (!user.emailIsVerified) {
       throw new Error("Email is not verified yet");
     }
 
@@ -56,7 +55,7 @@ class AuthService {
     user.token = token;
     user.save();
 
-    return token;
+    return { token, user };
   }
 
   static async logout(id) {
@@ -69,18 +68,86 @@ class AuthService {
   }
 
   static async validateToken(user_id, token) {
-    try {
-      const user = await User.findById({ _id: user_id });
-      if (!user) {
-        throw new Error("Invalid authentication token 1");
-      }
-
-      if (user.token != token) {
-        throw new Error("Invalid authentication token 2");
-      }
-    } catch (error) {
-      throw new Error("Invalid authentication token: " + error.message);
+    const user = await User.findById(user_id);
+    if (!user || user.token !== token) {
+      throw new Error("Invalid authentication");
     }
+  }
+
+  static async verifyEmail(token) {
+    const user = await User.findOne({ emailVerificationToken: token });
+    if (!user) {
+      throw new Error("Invalid token");
+    }
+    user.emailIsVerified = true;
+    user.emailVerificationToken = null;
+    await user.save();
+  }
+
+  static async SendPasswordResetEmail(email, password) {
+    const user = await User.findOne({ email: email });
+    const isAMatch = bcrypt.compare(user.password, password);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (!isAMatch) {
+      throw new Error("Incorect password");
+    }
+    const updateToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000;
+    await user.save();
+
+    const transporter = nodemailer.createTransport({
+      host: "sandbox.smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "903480d8ed01dc",
+        pass: "2afb958567b4e9",
+      },
+    });
+
+    const mailOptions = {
+      from: "hushhive.com",
+      to: email,
+      subject: "Password Reset",
+      html: `<p> You are receiving this email because you (or someone else) has requested to reset the password for your account.</p>
+       <p> Please click on the following link, or paste this into your browser to complete the process:</p>
+       <a href="${configs.frontend_url}/${configs.update_password_endpoint}/${updateToken}">Reset Password</a>
+      <p> If you did not request this, please ignore this email and your password will remain unchanged.</p>`,
+    };
+    await transporter.sendMail(mailOptions);
+  }
+
+  static async UpdatePassword(email, currentPassword, newPassword) {
+    const user = await User.findOne({ email: email });
+    const isAMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (!isAMatch) {
+      throw new Error("Invalid password");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+  }
+
+  static async UpdateEmail(oldEmail, newEmail) {
+    const user = await User.findOne({ email: oldEmail });
+    if (!user) {
+      throw new Error("User not found");
+    }
+    const emailVerificationToken = crypto.randomBytes(20).toString("hex");
+    Object.assign(user, {
+      email: newEmail,
+      emailIsVerified: false,
+      emailVerificationToken,
+    });
+    await user.save();
+    await this.sendVerificationEmail(newEmail, emailVerificationToken);
   }
 
   static async sendVerificationEmail(email, token) {
@@ -96,7 +163,7 @@ class AuthService {
       from: "hushhive.com",
       to: email,
       subject: "Email Verification",
-      text: `Click on the following link to verify your email: 127.0.0.1:8000/verify/${token}`,
+      html: `<p> Click on the following link to verify your email: </p> <a href="${configs.frontend_url}/${configs.verify_email_endpoint}/${token}">verify</a>`,
     };
 
     await transporter.sendMail(mailOptions);

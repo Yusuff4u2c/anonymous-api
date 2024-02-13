@@ -8,20 +8,20 @@ module.exports = async function (req, res, next) {
     const authorization = req.headers.authorization;
 
     if (!authorization) {
-      res
+      return res
         .status(StatusCodes.UNAUTHORIZED)
         .json({ status: false, message: "Not authenticated" });
     }
 
     const token = authorization.split(" ")[1];
     const userPayload = jwt.verify(token, configs.jwt_key);
-    req.user = userPayload;
 
+    req.user = userPayload;
     await AuthService.validateToken(userPayload._id, token);
-  } catch (e) {
+  } catch (error) {
     return res
       .status(StatusCodes.UNAUTHORIZED)
-      .json({ status: false, message: "invalid authentication" });
+      .json({ status: false, message: error.message });
   }
   next();
 };
