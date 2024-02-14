@@ -21,10 +21,10 @@ class AuthService {
       emailVerificationToken: emailVerificationToken,
       password: hashedPassword,
     });
-
+    const { _id, email, emailIsVerified, username } = newUser;
     await newUser.save();
     await this.sendVerificationEmail(newUser.email, emailVerificationToken);
-    return newUser;
+    return { _id, email, emailIsVerified, username };
   }
 
   static async login(reqBody) {

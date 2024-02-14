@@ -12,6 +12,6 @@ const router = express.Router();
 router.use("/auth", authRoute);
 router.use("/admin/messages", isAuthenticated, isAdmin, adminMessageRouter);
 router.use("/admin/users", isAuthenticated, isAdmin, adminUserRouter);
-router.use("/messages", userMessageRouter);
+router.use("/message", userMessageRouter);
 router.use("/user", userUserRouter);
 module.exports = router;

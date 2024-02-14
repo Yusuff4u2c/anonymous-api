@@ -1,8 +1,8 @@
 const User = require("../../models/User");
 
 class UserService {
-  static async show(user_id) {
-    const user = await User.findOne({ user: user_id });
+  static async show(username) {
+    const user = await User.findOne({ username });
     if (!user) {
       throw new Error("user not found");
     }

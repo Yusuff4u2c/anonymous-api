@@ -4,8 +4,10 @@ const MessageService = require("../../services/user/message.service");
 class MessageController {
   static async index(req, res) {
     try {
-      const user_id = req.user._id;
-      const messages = await MessageService.index(user_id);
+      const { user_id } = req.params;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const messages = await MessageService.index(user_id, page, limit);
       res.json({ status: true, data: messages });
     } catch (error) {
       res.status(StatusCodes.NOT_FOUND).json({
@@ -17,8 +19,9 @@ class MessageController {
 
   static async create(req, res) {
     try {
-      const body = req.body;
-      const newMessage = await MessageService.create(body);
+      const { username } = req.params;
+      const { message } = req.body;
+      const newMessage = await MessageService.create(username, message);
       res.json({ status: true, data: newMessage });
     } catch (error) {
       res
