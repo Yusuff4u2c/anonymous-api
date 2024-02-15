@@ -8,7 +8,7 @@ const cors = require("cors");
 const configs = require("./src/configs");
 
 const corsOptions = {
-  origin: `${configs.frontend_url}`,
+  origin: "https://hushhive-v2.vercel.app/register",
   optionsSuccessStatus: 200,
 };
 
