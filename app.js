@@ -5,9 +5,10 @@ const registeredRoutes = require("./src/setups/routes");
 const initializeApp = require("./src/setups/init");
 const registereMidddlewares = require("./src/setups/midddlewares");
 const cors = require("cors");
+const configs = require("./src/configs");
 
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: `${configs.frontend_url}`,
   optionsSuccessStatus: 200,
 };
 
